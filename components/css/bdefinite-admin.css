@@ -1,0 +1,10 @@
+/*
+ * style to alter the edit panel
+ */
+
+#title,
+#titlewrap,
+#title-prompt-text {
+	visibility: hidden;
+	height: 0;
+}
