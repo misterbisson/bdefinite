@@ -7,6 +7,7 @@ class bDefinite
 	public $id_base = 'bdefinite';
 	public $post_type_name = 'bdefinite';
 	public $post_meta_key = 'bdefinite';
+	public $add_to_waterfall = TRUE;
 
 	// from http://en.wikipedia.org/wiki/Parts_of_speech
 	public $default_parts_of_speech = array(
@@ -60,6 +61,8 @@ class bDefinite
 
 		add_action( 'init' , array( $this, 'register_post_type' ), 12 );
 
+		add_filter( 'pre_get_posts', array( $this, 'pre_get_posts' ));
+
 		// intercept attempts to save the post so we can update our meta
 		add_action( 'save_post', array( $this, 'save_post' ) );
 
@@ -94,6 +97,22 @@ class bDefinite
 
 		return $this->tools;
 	} // END tools
+
+	function pre_get_posts( $query )
+	{
+		if( ! isset( $query->query['post_type'] ) && $this->add_to_waterfall && ! is_admin() && $query->is_main_query() )
+		{
+			$post_types = array_merge( 
+				(array) $query->query_vars['post_type'] , 
+				array( $query->is_singular && isset( $query->queried_object->post_type ) ? $query->queried_object->post_type : 'post' ), 
+				array( $this->post_type_name )
+			);
+
+			$query->set( 'post_type', $post_types );
+		}
+
+		return $query;
+	}
 
 	// make sure the post ID is valid for a post of this type
 	public function sanitize_post_id( $post_id )
@@ -239,7 +258,7 @@ class bDefinite
 				'not_found' => 'No words found',
 			),
 			'show_ui' => FALSE,
-			'show_admin_column' => TRUE,
+			'show_admin_column' => FALSE,
 			'query_var' => TRUE,
 			'rewrite' => array(
 				'slug' => 'word',
@@ -296,6 +315,9 @@ class bDefinite
 				'supports' => array(
 					'title',
 					'editor',
+					'thumbnail',
+					'trackbacks',
+					'comments',
 					'revisions',
 				),
 				'public' => TRUE,
@@ -310,6 +332,7 @@ class bDefinite
 					$this->post_type_name . '_partsofspeech',
 					$this->post_type_name . '_words',
 				),
+				'menu_position' => 5,
 			)
 		);
 	} // END register_post_type
